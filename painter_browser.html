@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PAINTER // G-CODE STUDIO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c0d10; --surface:#13151b; --panel:#191c24; --border:#252933;
+  --accent:#e8ff47; --accent2:#ff6b35; --text:#c4c9da; --muted:#4e5468;
+  --mono:'Space Mono',monospace; --sans:'Barlow Condensed',sans-serif;
+  --c1:#ff6b6b; --c2:#3dd6c8; --c3:#ffd166; --c4:#b06aff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;overflow-x:hidden}
+
+header{
+  display:flex;align-items:center;gap:20px;
+  padding:14px 28px;border-bottom:1px solid var(--border);
+  background:var(--surface);position:sticky;top:0;z-index:100;
+}
+.logo{font-family:var(--sans);font-weight:800;font-size:1.5rem;letter-spacing:.14em;color:var(--accent);text-transform:uppercase}
+.logo em{color:var(--muted);font-style:normal}
+.subtitle{font-family:var(--sans);font-size:.72rem;color:var(--muted);letter-spacing:.22em;text-transform:uppercase;margin-top:2px}
+.hdr-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.pills{display:flex;gap:6px}
+.pill{width:8px;height:8px;border-radius:50%;opacity:.28;transition:opacity .2s,box-shadow .2s}
+.pill.on{opacity:1}
+
+.workspace{display:grid;grid-template-columns:1fr 320px;height:calc(100vh - 57px)}
+.main{overflow-y:auto;padding:22px 24px 0}
+.sidebar{border-left:1px solid var(--border);overflow-y:auto;background:var(--surface)}
+
+.sec{font-family:var(--sans);font-weight:600;font-size:.63rem;letter-spacing:.28em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:14px;padding-bottom:7px;
+  border-bottom:1px solid var(--border)}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+
+.card{background:var(--panel);border:1px solid var(--border);border-radius:5px;overflow:hidden;transition:border-color .25s,box-shadow .25s}
+.card.live{box-shadow:0 0 0 1px var(--lc);border-color:var(--lc)}
+.card.off{opacity:.38}
+.lc1{--lc:var(--c1)}.lc2{--lc:var(--c2)}.lc3{--lc:var(--c3)}.lc4{--lc:var(--c4)}
+
+.card-head{display:flex;align-items:center;gap:9px;padding:10px 12px;
+  background:rgba(0,0,0,.25);border-bottom:1px solid var(--border)}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:var(--lc);box-shadow:0 0 7px var(--lc)}
+.nm{background:transparent;border:none;outline:none;color:var(--lc);
+  font-family:var(--sans);font-weight:600;font-size:.9rem;letter-spacing:.07em;
+  text-transform:uppercase;flex:1;min-width:0}
+.tog{appearance:none;width:30px;height:17px;background:var(--border);border-radius:9px;
+  cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;margin-left:auto}
+.tog:checked{background:var(--lc)}
+.tog::after{content:'';position:absolute;width:11px;height:11px;border-radius:50%;
+  background:#fff;top:3px;left:3px;transition:left .2s}
+.tog:checked::after{left:16px}
+
+.cb{padding:12px}
+
+.dz{border:1px dashed var(--border);border-radius:4px;height:120px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:border-color .2s,background .2s;background:var(--bg);margin-bottom:10px}
+.dz:hover{border-color:var(--lc);background:rgba(255,255,255,.015)}
+.dz.loaded{border-style:solid;border-color:var(--lc)}
+.dz img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:.85}
+.dzov{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;
+  background:rgba(12,13,16,.75);transition:opacity .2s}
+.dz.loaded .dzov{opacity:0}.dz.loaded:hover .dzov{opacity:1}
+.dzi{font-size:1.4rem;opacity:.35}
+.dzt{font-family:var(--sans);font-size:.7rem;color:var(--muted);letter-spacing:.1em}
+.st2{font-size:.6rem;color:var(--muted);text-align:center;font-family:var(--sans);
+  letter-spacing:.04em;margin-bottom:10px;min-height:14px}
+
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px}
+.fr.t3{grid-template-columns:1fr 1fr 1fr}
+.f{display:flex;flex-direction:column;gap:3px}
+.f label{font-size:.57rem;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;font-family:var(--sans)}
+.f input,.f select{background:var(--bg);border:1px solid var(--border);color:var(--text);
+  font-family:var(--mono);font-size:.74rem;padding:5px 7px;border-radius:3px;
+  outline:none;transition:border-color .15s;width:100%}
+.f input:focus,.f select:focus{border-color:var(--accent)}
+.f select{cursor:pointer}.f select option{background:var(--panel)}
+
+.ss{padding:17px 18px;border-bottom:1px solid var(--border)}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+
+.genbar{padding:15px 24px;background:var(--surface);border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:14px}
+.btn{font-family:var(--sans);font-weight:800;font-size:1rem;letter-spacing:.18em;
+  text-transform:uppercase;background:var(--accent);color:#0c0d10;border:none;
+  padding:11px 28px;border-radius:3px;cursor:pointer;
+  transition:transform .1s,box-shadow .2s;white-space:nowrap}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(232,255,71,.32)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.st{font-family:var(--sans);font-size:.77rem;color:var(--muted);letter-spacing:.04em}
+.st.err{color:var(--accent2)}.st.ok{color:var(--accent)}
+.pw{display:none;flex:1;align-items:center;gap:10px}
+.pw.vis{display:flex}
+.pb{flex:1;height:2px;background:var(--border);border-radius:1px;overflow:hidden}
+.pf{height:100%;background:var(--accent);width:0%;transition:width .4s ease}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+@media(max-width:860px){
+  .workspace{grid-template-columns:1fr;height:auto}
+  .sidebar{border-left:none;border-top:1px solid var(--border)}
+  .grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">Painter <em>//</em> G-Code Studio</div>
+    <div class="subtitle">Multi-color robotic painting &mdash; runs entirely in browser</div>
+  </div>
+  <div class="hdr-right">
+    <div class="pills" id="pills"></div>
+  </div>
+</header>
+
+<div class="workspace">
+
+  <!-- ── LAYERS ── -->
+  <div class="main">
+    <div class="sec">Color Layers &mdash; Petri Dish Configuration</div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- ── GLOBAL CONFIG SIDEBAR ── -->
+  <div class="sidebar">
+
+    <div class="ss">
+      <div class="sec">Canvas</div>
+      <div class="cg">
+        <div class="f"><label>Target Width (mm)</label><input type="number" id="g_target_width" value="1070" step="1"></div>
+        <div class="f"><label>Resolution (px/mm)</label><input type="number" id="g_res" value="1.0" step="0.5" min="0.5" max="4"></div>
+        <div class="f"><label>Brush Width (mm)</label><input type="number" id="g_brush_w" value="1.6" step="0.1"></div>
+        <div class="f"><label>Overlap</label><input type="number" id="g_overlap" value="0.15" step="0.01"></div>
+        <div class="f"><label>X Offset (mm)</label><input type="number" id="g_x_off" value="263" step="1"></div>
+        <div class="f"><label>Y Offset (mm)</label><input type="number" id="g_y_off" value="266" step="1"></div>
+      </div>
+    </div>
+
+    <div class="ss">
+      <div class="sec">Z Heights (mm)</div>
+      <div class="cg">
+        <div class="f"><label>Z Paint</label><input type="number" id="g_z_paint" value="0.0" step="0.1"></div>
+        <div class="f"><label>Z Low</label><input type="number" id="g_z_low" value="4.6" step="0.1"></div>
+        <div class="f"><label>Z High</label><input type="number" id="g_z_high" value="31.0" step="0.5"></div>
+        <div class="f"><label>Z Wipe Exit</label><input type="number" id="g_z_wipe_exit" value="16.0" step="0.5"></div>
+        <div class="f"><label>Dip Z</label><input type="number" id="g_dip_z" value="0.0" step="0.1"></div>
+      </div>
+    </div>
+
+    <div class="ss">
+      <div class="sec">Dip Parameters</div>
+      <div class="cg">
+        <div class="f"><label>Min Dist (mm)</label><input type="number" id="g_min_dist" value="240" step="5"></div>
+        <div class="f"><label>Max Dist (mm)</label><input type="number" id="g_max_dist" value="280" step="5"></div>
+        <div class="f"><label>Jitter</label><input type="number" id="g_dip_jitter" value="20" step="1"></div>
+        <div class="f"><label>Spiral Loops</label><input type="number" id="g_dip_spiral_loops" value="1.0" step="0.5"></div>
+        <div class="f"><label>Spiral Radius</label><input type="number" id="g_dip_spiral_r" value="50" step="5"></div>
+        <div class="f"><label>Wipe Radius</label><input type="number" id="g_wipe_r" value="70" step="5"></div>
+      </div>
+    </div>
+
+    <div class="ss">
+      <div class="sec">Speed &amp; Acceleration</div>
+      <div class="cg">
+        <div class="f"><label>Feed Travel</label><input type="number" id="g_feed" value="12000" step="500"></div>
+        <div class="f"><label>Feed Paint</label><input type="number" id="g_feed_paint" value="400" step="50"></div>
+        <div class="f"><label>Accel Travel</label><input type="number" id="g_accel_travel" value="12000" step="500"></div>
+        <div class="f"><label>Accel Paint</label><input type="number" id="g_accel_paint" value="200" step="50"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="genbar">
+  <button class="btn" id="btnGen" onclick="generate()">&#x2B21; Generate G-Code</button>
+  <div class="pw" id="pw"><div class="pb"><div class="pf" id="pf"></div></div></div>
+  <div class="st" id="st">Load images for each active layer, then generate.</div>
+</div>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════════════════════
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ══════════════════════════════════════════════════════
+//  IMAGE PROCESSING
+// ══════════════════════════════════════════════════════
+
+/** Generate thresholded preview + stats from a File */
+function processPreview(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onerror = reject;
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const sc = Math.min(400 / img.width, 400 / img.height, 1);
+      const pw = Math.round(img.width * sc), ph = Math.round(img.height * sc);
+      const cv = document.createElement('canvas');
+      cv.width = pw; cv.height = ph;
+      const ctx = cv.getContext('2d');
+      ctx.drawImage(img, 0, 0, pw, ph);
+      const id = ctx.getImageData(0, 0, pw, ph);
+      const px = id.data;
+      let inside = 0;
+      for (let i = 0; i < pw * ph; i++) {
+        const g = 0.299 * px[i*4] + 0.587 * px[i*4+1] + 0.114 * px[i*4+2];
+        const v = g < 140 ? 0 : 255;
+        px[i*4] = px[i*4+1] = px[i*4+2] = v;
+        if (!v) inside++;
+      }
+      ctx.putImageData(id, 0, 0);
+      resolve({
+        preview: cv.toDataURL('image/png'),
+        coverage: (inside / (pw * ph) * 100).toFixed(1),
+        size: [img.width, img.height]
+      });
+    };
+    img.src = url;
+  });
+}
+
+/** Load file as full-resolution binary Uint8Array for path generation */
+function loadBinaryArr(file, targetWidth, res) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onerror = reject;
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const tw = Math.round(targetWidth * res);
+      const th = Math.round(tw * img.height / img.width);
+      const cv = document.createElement('canvas');
+      cv.width = tw; cv.height = th;
+      const ctx = cv.getContext('2d');
+      ctx.drawImage(img, 0, 0, tw, th);
+      const px = ctx.getImageData(0, 0, tw, th).data;
+      const arr = new Uint8Array(th * tw);
+      for (let i = 0; i < th * tw; i++) {
+        const g = 0.299 * px[i*4] + 0.587 * px[i*4+1] + 0.114 * px[i*4+2];
+        arr[i] = g < 140 ? 1 : 0;
+      }
+      resolve({ arr, h: th, w: tw });
+    };
+    img.src = url;
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  CHEBYSHEV DISTANCE TRANSFORM  (8-connected BFS)
+//  Equivalent to repeated erosion with np.ones((3,3))
+// ══════════════════════════════════════════════════════
+
+function chebyshevDist(arr, h, w) {
+  const dist = new Uint16Array(h * w).fill(65535);
+  // Use a plain array as queue — each pixel enqueued at most once
+  const q = new Int32Array(h * w);
+  let head = 0, tail = 0;
+  for (let i = 0; i < h * w; i++) {
+    if (!arr[i]) { dist[i] = 0; q[tail++] = i; }
+  }
+  while (head < tail) {
+    const idx = q[head++];
+    const r = (idx / w) | 0, c = idx % w;
+    const d = dist[idx] + 1;
+    for (let dr = -1; dr <= 1; dr++) {
+      const nr = r + dr; if (nr < 0 || nr >= h) continue;
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const nc = c + dc; if (nc < 0 || nc >= w) continue;
+        const ni = nr * w + nc;
+        if (dist[ni] > d) { dist[ni] = d; q[tail++] = ni; }
+      }
+    }
+  }
+  return dist;
+}
+
+// ══════════════════════════════════════════════════════
+//  MARCHING SQUARES
+//  Works on any numeric array (binary or distance transform).
+//  Returns array of paths in pixel [row, col] coordinates.
+// ══════════════════════════════════════════════════════
+
+function marchingSquares(data, h, w, level) {
+  const segs = [];
+
+  for (let r = 0; r < h - 1; r++) {
+    for (let c = 0; c < w - 1; c++) {
+      const tl = data[r*w + c],     tr = data[r*w + c+1];
+      const bl = data[(r+1)*w + c], br = data[(r+1)*w + c+1];
+
+      const tlI = tl > level ? 1 : 0, trI = tr > level ? 1 : 0;
+      const brI = br > level ? 1 : 0, blI = bl > level ? 1 : 0;
+      const idx = (tlI << 3) | (trI << 2) | (brI << 1) | blI;
+      if (idx === 0 || idx === 15) continue;
+
+      // Linear interpolation along each edge
+      const iT = tl !== tr ? (level - tl) / (tr - tl) : 0.5;
+      const iR = tr !== br ? (level - tr) / (br - tr) : 0.5;
+      const iB = bl !== br ? (level - bl) / (br - bl) : 0.5;
+      const iL = tl !== bl ? (level - tl) / (bl - tl) : 0.5;
+
+      // Edge midpoints in [row, col] space
+      const T = [r,     c + iT];  // top edge
+      const R = [r + iR, c + 1];  // right edge
+      const B = [r + 1,  c + iB]; // bottom edge
+      const L = [r + iL, c    ];  // left edge
+
+      switch (idx) {
+        case  1: segs.push([L, B]); break;
+        case  2: segs.push([B, R]); break;
+        case  3: segs.push([L, R]); break;
+        case  4: segs.push([T, R]); break;
+        case  5: segs.push([T, R], [L, B]); break; // ambiguous saddle
+        case  6: segs.push([T, B]); break;
+        case  7: segs.push([T, L]); break;
+        case  8: segs.push([T, L]); break; // complement of 7
+        case  9: segs.push([T, B]); break;
+        case 10: segs.push([T, L], [B, R]); break; // ambiguous saddle
+        case 11: segs.push([T, R]); break;
+        case 12: segs.push([L, R]); break;
+        case 13: segs.push([B, R]); break;
+        case 14: segs.push([L, B]); break;
+      }
+    }
+  }
+
+  return connectSegments(segs);
+}
+
+/** Chain individual line segments into continuous paths */
+function connectSegments(segs) {
+  if (!segs.length) return [];
+
+  // Encode point to string key. For integer dist + half-integer levels,
+  // all midpoints land exactly at *.5 so *4 gives exact integers.
+  const key = p => `${Math.round(p[0] * 4)},${Math.round(p[1] * 4)}`;
+
+  // Build adjacency: key → list of (segIndex*2 + endIndex)
+  const adj = new Map();
+  const addAdj = (p, ref) => {
+    const k = key(p);
+    if (!adj.has(k)) adj.set(k, []);
+    adj.get(k).push(ref);
+  };
+  for (let i = 0; i < segs.length; i++) {
+    addAdj(segs[i][0], i * 2 + 0);
+    addAdj(segs[i][1], i * 2 + 1);
+  }
+
+  const used = new Uint8Array(segs.length);
+  const paths = [];
+
+  for (let si = 0; si < segs.length; si++) {
+    if (used[si]) continue;
+    used[si] = 1;
+
+    // Grow forward from segs[si][1]
+    const fwd = [segs[si][0], segs[si][1]];
+    let cur = segs[si][1];
+    for (let lim = segs.length; lim-- > 0;) {
+      const nbrs = adj.get(key(cur));
+      let moved = false;
+      if (nbrs) for (const ref of nbrs) {
+        const ni = ref >> 1, ne = ref & 1;
+        if (!used[ni]) {
+          used[ni] = 1;
+          cur = segs[ni][ne ^ 1];
+          fwd.push(cur);
+          moved = true;
+          break;
+        }
+      }
+      if (!moved) break;
+    }
+
+    // Grow backward from segs[si][0]
+    const bwd = [segs[si][0]];
+    cur = segs[si][0];
+    for (let lim = segs.length; lim-- > 0;) {
+      const nbrs = adj.get(key(cur));
+      let moved = false;
+      if (nbrs) for (const ref of nbrs) {
+        const ni = ref >> 1, ne = ref & 1;
+        if (!used[ni]) {
+          used[ni] = 1;
+          cur = segs[ni][ne ^ 1];
+          bwd.push(cur);
+          moved = true;
+          break;
+        }
+      }
+      if (!moved) break;
+    }
+
+    bwd.reverse();
+    const path = [...bwd, ...fwd.slice(1)];
+    if (path.length > 2) paths.push(path);
+  }
+
+  return paths;
+}
+
+// ══════════════════════════════════════════════════════
+//  PATH GENERATION  (lines + concentric)
+// ══════════════════════════════════════════════════════
+
+async function generatePaths(arr, h, w, cfg, onProg) {
+  const res = cfg.res;
+  const stepPx = Math.max(1, Math.trunc(cfg.brush_w * (1 - cfg.overlap) * res));
+  const raw = [];
+
+  if (cfg.infill_type === 'concentric') {
+    // 1. Distance transform — equivalent to repeated erosion with 3×3 ones
+    const dist = chebyshevDist(arr, h, w);
+    let maxD = 0;
+    for (let i = 0; i < dist.length; i++) {
+      if (dist[i] !== 65535 && dist[i] > maxD) maxD = dist[i];
+    }
+    // 2. Marching squares at each contour level (fast: one pass over pixels per level)
+    let lvIdx = 0;
+    for (let lv = 0.5; lv < maxD; lv += stepPx, lvIdx++) {
+      for (const contour of marchingSquares(dist, h, w, lv)) {
+        // Convert [row, col] → G-code [x, y], flip Y so image is right-way-up on canvas
+        const path = contour.map(([row, col]) => [
+          col / res + cfg.x_off,
+          (h - 1 - row) / res + cfg.y_off
+        ]);
+        if (path.length > 2) raw.push(path);
+      }
+      if (lvIdx % 8 === 0) {
+        onProg && onProg(lv / maxD);
+        await sleep(0); // yield to UI thread
+      }
+    }
+
+  } else {
+    // Lines infill — scan in rotated coordinate system
+    const ar = cfg.infill_angle * Math.PI / 180;
+    const ca = Math.cos(ar), sa = Math.sin(ar);
+    const cx = w / 2, cy = h / 2;
+    const diag = Math.ceil(Math.hypot(w, h)) + 10;
+    const total = Math.ceil(2 * diag / stepPx);
+    let li = 0;
+
+    for (let yR = -diag; yR < diag; yR += stepPx, li++) {
+      let line = [];
+      for (let xR = -diag; xR < diag; xR++) {
+        const ox = Math.trunc(cx + xR * ca - yR * sa);
+        const oy = Math.trunc(cy + xR * sa + yR * ca);
+        if (ox >= 0 && ox < w && oy >= 0 && oy < h && arr[oy * w + ox]) {
+          line.push([ox / res + cfg.x_off, (h - 1 - oy) / res + cfg.y_off]);
+        } else {
+          if (line.length > 1) raw.push(line);
+          line = [];
+        }
+      }
+      if (line.length > 1) raw.push(line);
+      if (li % 40 === 0) {
+        onProg && onProg(li / total);
+        await sleep(0);
+      }
+    }
+  }
+
+  return optimizePaths(raw, [cfg.dip_x, cfg.dip_y]);
+}
+
+// ══════════════════════════════════════════════════════
+//  PATH OPTIMIZER  (nearest-neighbour or spatial sort)
+// ══════════════════════════════════════════════════════
+
+function optimizePaths(paths, start) {
+  if (!paths.length) return [];
+
+  if (paths.length > 5000) {
+    return [...paths].sort((a, b) => {
+      const ax = (a[0][0] / 20) | 0, bx = (b[0][0] / 20) | 0;
+      if (ax !== bx) return ax - bx;
+      return ax % 2 ? b[0][1] - a[0][1] : a[0][1] - b[0][1];
+    });
+  }
+
+  const rem = [...paths];
+  const opt = [];
+  let cx = start[0], cy = start[1];
+  while (rem.length) {
+    let bi = 0, bd = Infinity;
+    for (let i = 0; i < rem.length; i++) {
+      const dx = rem[i][0][0] - cx, dy = rem[i][0][1] - cy;
+      const d = dx * dx + dy * dy;
+      if (d < bd) { bd = d; bi = i; }
+    }
+    const p = rem.splice(bi, 1)[0];
+    opt.push(p);
+    cx = p[p.length - 1][0]; cy = p[p.length - 1][1];
+  }
+  return opt;
+}
+
+// ══════════════════════════════════════════════════════
+//  G-CODE GENERATOR
+// ══════════════════════════════════════════════════════
+
+class UltraPainter {
+  constructor(cfg) {
+    this.c = cfg;
+    this.gc = [];
+    this.dd = 0; // distance since last dip
+    this.pos = [cfg.dip_x, cfg.dip_y];
+    this.md = cfg.min_dist + Math.random() * (cfg.max_dist - cfg.min_dist);
+  }
+
+  _spd(m) {
+    const c = this.c;
+    const ac = m === 'travel' ? c.accel_travel : c.accel_paint;
+    const f  = m === 'travel' ? c.feed         : c.feed_paint;
+    this.gc.push('M400', `M204 P${ac} T${ac}`, `G1 F${f}`);
+  }
+
+  _dip(tx, ty) {
+    const c = this.c, f = n => n.toFixed(3);
+    const ax = c.dip_x + (Math.random() * 2 - 1) * c.dip_jitter;
+    const ay = c.dip_y + (Math.random() * 2 - 1) * c.dip_jitter;
+
+    this.gc.push('\n; --- CIKEL NAMAKANJA ---', `G0 Z${f(c.z_low)} F3000`);
+    this._spd('travel');
+    this.gc.push(`G0 X${f(ax)} Y${f(ay)} Z${f(c.z_high)}`, `G1 Z${f(c.dip_z)} F3000`);
+
+    const ns = Math.floor(c.dip_spiral_loops * 4);
+    for (let i = 0; i < ns; i++) {
+      const a = i * Math.PI / 2, r = (i / ns) * c.dip_spiral_r;
+      this.gc.push(`G1 X${f(ax + r * Math.cos(a))} Y${f(ay + r * Math.sin(a))} F2500`);
+    }
+
+    const dx = tx - c.dip_x, dy = ty - c.dip_y, d = Math.hypot(dx, dy);
+    const wx = d > 0 ? c.dip_x + dx / d * c.wipe_r : c.dip_x + c.wipe_r;
+    const wy = d > 0 ? c.dip_y + dy / d * c.wipe_r : c.dip_y;
+
+    this.gc.push(
+      `G0 Z${f(c.z_wipe_exit)} F3000`, `G0 X${f(wx)} Y${f(wy)}`,
+      `G0 Z${f(c.z_high)} F3000`, `G0 X${f(tx)} Y${f(ty)} Z${f(c.z_low)}`
+    );
+    this.dd = 0;
+    this.md = c.min_dist + Math.random() * (c.max_dist - c.min_dist);
+    this.pos = [tx, ty];
+  }
+
+  run(paths, appendTo) {
+    this.gc = appendTo || ['G90', 'G21'];
+    if (!paths.length) return this.gc;
+    const c = this.c, f = n => n.toFixed(3);
+
+    this._dip(paths[0][0][0], paths[0][0][1]);
+
+    for (let path of paths) {
+      // Bidirectional: pick the closer end as start
+      const d0 = Math.hypot(path[0][0] - this.pos[0], path[0][1] - this.pos[1]);
+      const d1 = Math.hypot(path[path.length-1][0] - this.pos[0], path[path.length-1][1] - this.pos[1]);
+      if (d1 < d0) path = [...path].reverse();
+
+      this._spd('travel');
+      this.gc.push(`G0 X${f(path[0][0])} Y${f(path[0][1])} Z${f(c.z_low)}`);
+      this._spd('paint');
+      this.gc.push(`G1 Z${f(c.z_paint)} F2500`);
+      this.pos = path[0];
+
+      for (let i = 1; i < path.length; i++) {
+        const [px, py] = path[i];
+        const dist = Math.hypot(px - this.pos[0], py - this.pos[1]);
+        if (this.dd + dist > this.md) {
+          this.gc.push(`G0 Z${f(c.z_low)} F3000`);
+          this._dip(px, py);
+          this._spd('paint');
+          this.gc.push(`G1 Z${f(c.z_paint)} F2500`);
+        }
+        this.gc.push(`G1 X${f(px)} Y${f(py)}`);
+        this.dd += dist;
+        this.pos = [px, py];
+      }
+      this.gc.push(`G0 Z${f(c.z_low)} F3000`);
+    }
+    return this.gc;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  UI STATE
+// ══════════════════════════════════════════════════════
+
+const COLORS = ['#ff6b6b','#3dd6c8','#ffd166','#b06aff'];
+const NAMES  = ['Color 1 — Red','Color 2 — Teal','Color 3 — Yellow','Color 4 — Purple'];
+const DIPS   = [{x:66,y:862},{x:66,y:700},{x:66,y:538},{x:66,y:376}];
+
+const state = Array.from({length:4}, (_, i) => ({
+  name: NAMES[i], enabled: true,
+  dip_x: DIPS[i].x, dip_y: DIPS[i].y,
+  infill_type: 'lines', infill_angle: i * 45,
+  brush_w: null,
+  file: null, preview: null, stats: ''
+}));
+
+// ── RENDER ──
+function render() {
+  document.getElementById('grid').innerHTML = state.map((s, i) => `
+    <div class="card lc${i+1} ${s.enabled?'live':'off'}" id="card${i}">
+      <div class="card-head">
+        <div class="dot" style="background:${COLORS[i]};box-shadow:0 0 7px ${COLORS[i]}80"></div>
+        <input class="nm" value="${s.name}" oninput="state[${i}].name=this.value" style="color:${COLORS[i]}">
+        <input type="checkbox" class="tog" ${s.enabled?'checked':''}
+          onchange="toggleLayer(${i},this.checked)">
+      </div>
+      <div class="cb">
+        <!-- Drop zone -->
+        <div class="dz ${s.preview?'loaded':''}" id="dz${i}"
+          onclick="document.getElementById('fi${i}').click()"
+          ondragover="event.preventDefault()" ondrop="dropFile(event,${i})">
+          ${s.preview ? `<img src="${s.preview}">` : ''}
+          <div class="dzov">
+            <div class="dzi">&#x2B21;</div>
+            <div class="dzt">${s.preview ? 'Replace image' : 'Drop or click to load'}</div>
+          </div>
+        </div>
+        <input type="file" id="fi${i}" style="display:none" accept="image/*"
+          onchange="onFile(event,${i})">
+        <div class="st2" id="st2_${i}">${s.stats || 'No image loaded'}</div>
+
+        <!-- Petri dish position -->
+        <div class="fr">
+          <div class="f"><label>Petri Dish X (mm)</label>
+            <input type="number" value="${s.dip_x}" step="1"
+              oninput="state[${i}].dip_x=+this.value||0"></div>
+          <div class="f"><label>Petri Dish Y (mm)</label>
+            <input type="number" value="${s.dip_y}" step="1"
+              oninput="state[${i}].dip_y=+this.value||0"></div>
+        </div>
+
+        <!-- Infill -->
+        <div class="fr t3">
+          <div class="f" style="grid-column:span 2"><label>Infill Type</label>
+            <select onchange="state[${i}].infill_type=this.value">
+              <option value="lines"      ${s.infill_type==='lines'?'selected':''}>Lines</option>
+              <option value="concentric" ${s.infill_type==='concentric'?'selected':''}>Concentric</option>
+            </select></div>
+          <div class="f"><label>Angle °</label>
+            <input type="number" value="${s.infill_angle}" step="5"
+              oninput="state[${i}].infill_angle=+this.value||0"></div>
+        </div>
+
+        <!-- Per-layer brush width -->
+        <div class="fr">
+          <div class="f"><label>Brush Width (mm)</label>
+            <input type="number" placeholder="(global)" step="0.1"
+              value="${s.brush_w !== null ? s.brush_w : ''}"
+              oninput="state[${i}].brush_w=this.value===''?null:+this.value"></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  updatePills();
+}
+
+function updatePills() {
+  document.getElementById('pills').innerHTML = state.map((s, i) =>
+    `<div class="pill ${s.enabled?'on':''}"
+      style="background:${COLORS[i]};${s.enabled ? `box-shadow:0 0 6px ${COLORS[i]}` : ''}"
+      title="${s.name}"></div>`
+  ).join('');
+}
+
+function toggleLayer(i, v) {
+  state[i].enabled = v;
+  document.getElementById(`card${i}`).className = `card lc${i+1} ${v?'live':'off'}`;
+  updatePills();
+}
+
+// ── FILE HANDLING ──
+function onFile(e, i) { const f = e.target.files[0]; if (f) handleFile(f, i); }
+function dropFile(e, i) { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f, i); }
+
+async function handleFile(file, i) {
+  setst(`Processing layer ${i+1} image…`, '');
+  try {
+    const { preview, coverage, size } = await processPreview(file);
+    state[i].file    = file;
+    state[i].preview = preview;
+    state[i].stats   = `${size[0]}×${size[1]}px · ${coverage}% coverage`;
+    render();
+    setst(`Layer ${i+1} ready — ${state[i].stats}`, 'ok');
+  } catch (err) {
+    setst(`Layer ${i+1} image error: ${err}`, 'err');
+  }
+}
+
+// ── GLOBAL CONFIG READ ──
+function gcfg() {
+  const g = id => parseFloat(document.getElementById('g_' + id).value) || 0;
+  return {
+    target_width: g('target_width'), brush_w: g('brush_w'), overlap: g('overlap'),
+    res: g('res') || 1.0,
+    x_off: g('x_off'), y_off: g('y_off'),
+    z_paint: g('z_paint'), z_low: g('z_low'), z_high: g('z_high'),
+    z_wipe_exit: g('z_wipe_exit'), dip_z: g('dip_z'),
+    min_dist: g('min_dist'), max_dist: g('max_dist'),
+    dip_jitter: g('dip_jitter'), dip_spiral_loops: g('dip_spiral_loops'),
+    dip_spiral_r: g('dip_spiral_r'), wipe_r: g('wipe_r'),
+    feed: g('feed'), feed_paint: g('feed_paint'),
+    accel_travel: g('accel_travel'), accel_paint: g('accel_paint')
+  };
+}
+
+// ── STATUS / PROGRESS ──
+function setst(m, t) {
+  const el = document.getElementById('st');
+  el.textContent = m; el.className = 'st' + (t ? ' ' + t : '');
+}
+function setProg(v) {
+  document.getElementById('pf').style.width = Math.min(v * 100, 100) + '%';
+}
+
+// ── MAIN GENERATE ──
+async function generate() {
+  const activeLayers = state.filter(s => s.enabled && s.file);
+  if (!activeLayers.length) {
+    setst('No active layers with images loaded.', 'err');
+    return;
+  }
+
+  const btn = document.getElementById('btnGen');
+  const pw  = document.getElementById('pw');
+  btn.disabled = true; pw.classList.add('vis'); setProg(0);
+
+  const global = gcfg();
+  const combined = [
+    'G90', 'G21',
+    '; === MULTI-COLOR PAINTER GCODE ===',
+    `; Generated layers: ${activeLayers.length}`,
+    ''
+  ];
+
+  try {
+    let done = 0;
+    for (let i = 0; i < state.length; i++) {
+      const s = state[i];
+      if (!s.enabled || !s.file) continue;
+
+      combined.push(
+        `\n; ═══════════════════════════════`,
+        `; LAYER ${i+1}: ${s.name}`,
+        `; ═══════════════════════════════\n`
+      );
+
+      const cfg = {
+        ...global,
+        dip_x: s.dip_x, dip_y: s.dip_y,
+        infill_type: s.infill_type, infill_angle: s.infill_angle,
+        brush_w: s.brush_w !== null ? s.brush_w : global.brush_w
+      };
+
+      setst(`Layer ${i+1} / ${activeLayers.length}: loading image…`, '');
+      await sleep(10);
+      const { arr, h, w } = await loadBinaryArr(s.file, cfg.target_width, cfg.res);
+
+      setst(`Layer ${i+1} / ${activeLayers.length}: generating paths (${w}×${h}px)…`, '');
+      const base = done / activeLayers.length;
+      const paths = await generatePaths(arr, h, w, cfg, v => {
+        setProg(base + v / activeLayers.length * 0.9);
+      });
+
+      setst(`Layer ${i+1} / ${activeLayers.length}: writing G-code (${paths.length} paths)…`, '');
+      await sleep(0);
+      const painter = new UltraPainter(cfg);
+      painter.run(paths, combined);
+
+      done++;
+      setProg(done / activeLayers.length);
+    }
+
+    combined.push('', 'M400', `G0 Z${global.z_high.toFixed(3)} F3000`, 'M2');
+
+    // Download
+    const blob = new Blob([combined.join('\n')], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'multicolor_paint.gcode';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+
+    setst(`✓ G-code for ${activeLayers.length} layer(s) downloaded.`, 'ok');
+
+  } catch (err) {
+    setst('Generation failed: ' + err.message, 'err');
+    console.error(err);
+  }
+
+  btn.disabled = false;
+  pw.classList.remove('vis');
+}
+
+// ── INIT ──
+render();
+</script>
+</body>
+</html>
