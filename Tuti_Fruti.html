@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PAINTER // G-CODE STUDIO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c0d10; --surface:#13151b; --panel:#191c24; --border:#252933;
+  --accent:#e8ff47; --accent2:#ff6b35; --text:#c4c9da; --muted:#4e5468;
+  --label:#9ba3c0;
+  --mono:'Space Mono',monospace; --sans:'Barlow Condensed',sans-serif;
+  --c1:#ff6b6b; --c2:#3dd6c8; --c3:#ffd166; --c4:#b06aff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;overflow-x:hidden}
+
+header{
+  display:flex;align-items:center;gap:20px;
+  padding:14px 28px;border-bottom:1px solid var(--border);
+  background:var(--surface);position:sticky;top:0;z-index:100;
+}
+.logo{font-family:var(--sans);font-weight:800;font-size:1.5rem;letter-spacing:.14em;color:var(--accent);text-transform:uppercase}
+.logo em{color:var(--muted);font-style:normal}
+.subtitle{font-family:var(--sans);font-size:.72rem;color:var(--muted);letter-spacing:.22em;text-transform:uppercase;margin-top:2px}
+.hdr-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.pills{display:flex;gap:6px}
+.pill{width:8px;height:8px;border-radius:50%;opacity:.28;transition:opacity .2s,box-shadow .2s}
+.pill.on{opacity:1}
+
+.workspace{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 57px)}
+.main{overflow-y:auto;padding:22px 24px 0}
+.sidebar{border-left:1px solid var(--border);overflow-y:auto;background:var(--surface)}
+
+.sec{font-family:var(--sans);font-weight:600;font-size:.63rem;letter-spacing:.28em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:14px;padding-bottom:7px;
+  border-bottom:1px solid var(--border)}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+
+.card{background:var(--panel);border:1px solid var(--border);border-radius:5px;overflow:hidden;transition:border-color .25s,box-shadow .25s}
+.card.live{box-shadow:0 0 0 1px var(--lc);border-color:var(--lc)}
+.card.off{opacity:.38}
+.lc1{--lc:var(--c1)}.lc2{--lc:var(--c2)}.lc3{--lc:var(--c3)}.lc4{--lc:var(--c4)}
+
+.card-head{display:flex;align-items:center;gap:9px;padding:10px 12px;
+  background:rgba(0,0,0,.25);border-bottom:1px solid var(--border)}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:var(--lc);box-shadow:0 0 7px var(--lc)}
+.nm{background:transparent;border:none;outline:none;color:var(--lc);
+  font-family:var(--sans);font-weight:600;font-size:.9rem;letter-spacing:.07em;
+  text-transform:uppercase;flex:1;min-width:0}
+.tog{appearance:none;width:30px;height:17px;background:var(--border);border-radius:9px;
+  cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;margin-left:auto}
+.tog:checked{background:var(--lc)}
+.tog::after{content:'';position:absolute;width:11px;height:11px;border-radius:50%;
+  background:#fff;top:3px;left:3px;transition:left .2s}
+.tog:checked::after{left:16px}
+
+.cb{padding:12px}
+
+.dz{border:1px dashed var(--border);border-radius:4px;height:120px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:border-color .2s,background .2s;background:var(--bg);margin-bottom:10px}
+.dz:hover{border-color:var(--lc);background:rgba(255,255,255,.015)}
+.dz.loaded{border-style:solid;border-color:var(--lc)}
+.dz img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:.85}
+.dzov{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;
+  background:rgba(12,13,16,.75);transition:opacity .2s}
+.dz.loaded .dzov{opacity:0}.dz.loaded:hover .dzov{opacity:1}
+.dzi{font-size:1.4rem;opacity:.35}
+.dzt{font-family:var(--sans);font-size:.7rem;color:var(--muted);letter-spacing:.1em}
+.st2{font-size:.6rem;color:var(--muted);text-align:center;font-family:var(--sans);
+  letter-spacing:.04em;margin-bottom:10px;min-height:14px}
+
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px}
+.fr.t3{grid-template-columns:1fr 1fr 1fr}
+.fr.t1{grid-template-columns:1fr}
+.f{display:flex;flex-direction:column;gap:3px}
+.f label{font-size:.57rem;color:var(--label);letter-spacing:.14em;text-transform:uppercase;font-family:var(--sans)}
+.f input,.f select{background:var(--bg);border:1px solid var(--border);color:var(--text);
+  font-family:var(--mono);font-size:.74rem;padding:5px 7px;border-radius:3px;
+  outline:none;transition:border-color .15s;width:100%}
+.f input:focus,.f select:focus{border-color:var(--accent)}
+.f select{cursor:pointer}.f select option{background:var(--panel)}
+
+/* Checkbox toggle row */
+.ftog{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.ftog label{font-size:.57rem;color:var(--label);letter-spacing:.14em;text-transform:uppercase;font-family:var(--sans);cursor:pointer;user-select:none}
+.ftog input[type=checkbox]{appearance:none;width:26px;height:15px;background:var(--border);
+  border-radius:8px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.ftog input[type=checkbox]:checked{background:var(--accent)}
+.ftog input[type=checkbox]::after{content:'';position:absolute;width:9px;height:9px;
+  border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s}
+.ftog input[type=checkbox]:checked::after{left:14px}
+
+.ss{padding:17px 18px;border-bottom:1px solid var(--border)}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.cg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+
+/* Inline badge for section tags */
+.badge{display:inline-block;font-family:var(--sans);font-size:.55rem;letter-spacing:.12em;
+  text-transform:uppercase;background:rgba(232,255,71,.12);color:var(--accent);
+  padding:1px 6px;border-radius:2px;margin-left:8px;vertical-align:middle}
+.badge.warn{background:rgba(255,107,53,.12);color:var(--accent2)}
+
+.genbar{padding:15px 24px;background:var(--surface);border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:14px}
+.btn{font-family:var(--sans);font-weight:800;font-size:1rem;letter-spacing:.18em;
+  text-transform:uppercase;background:var(--accent);color:#0c0d10;border:none;
+  padding:11px 28px;border-radius:3px;cursor:pointer;
+  transition:transform .1s,box-shadow .2s;white-space:nowrap}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(232,255,71,.32)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.st{font-family:var(--sans);font-size:.77rem;color:var(--muted);letter-spacing:.04em}
+.st.err{color:var(--accent2)}.st.ok{color:var(--accent)}
+.pw{display:none;flex:1;align-items:center;gap:10px}
+.pw.vis{display:flex}
+.pb{flex:1;height:2px;background:var(--border);border-radius:1px;overflow:hidden}
+.pf{height:100%;background:var(--accent);width:0%;transition:width .4s ease}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── Quote ── */
+.hdr-quote{
+  font-family:var(--sans);font-style:italic;font-size:.72rem;
+  color:var(--muted);letter-spacing:.04em;
+  border-left:2px solid var(--border);padding-left:12px;
+  max-width:260px;line-height:1.5;margin-right:14px;
+  display:none;
+}
+.hdr-quote em{font-style:normal;color:#4e5468;display:block;margin-top:2px;font-size:.65rem;letter-spacing:.1em}
+@media(min-width:1100px){.hdr-quote{display:block}}
+
+/* ── Preview button (secondary style) ── */
+.btn-sec{font-family:var(--sans);font-weight:700;font-size:.88rem;letter-spacing:.16em;
+  text-transform:uppercase;background:transparent;color:var(--accent);
+  border:1px solid rgba(232,255,71,.35);padding:9px 20px;border-radius:3px;cursor:pointer;
+  transition:background .15s,border-color .15s;white-space:nowrap}
+.btn-sec:hover{background:rgba(232,255,71,.08);border-color:var(--accent)}
+.btn-sec:disabled{opacity:.3;cursor:not-allowed}
+
+/* ── Visualizer Modal ── */
+#vizModal{
+  display:none;position:fixed;inset:0;z-index:999;
+  background:rgba(8,9,12,.92);backdrop-filter:blur(6px);
+  flex-direction:column;
+}
+#vizModal.open{display:flex}
+.viz-header{
+  display:flex;align-items:center;gap:16px;padding:12px 20px;
+  background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.viz-title{font-family:var(--sans);font-weight:800;font-size:1.1rem;
+  letter-spacing:.14em;color:var(--accent);text-transform:uppercase}
+.viz-stats{font-family:var(--mono);font-size:.65rem;color:var(--muted)}
+.viz-legend{display:flex;gap:14px;margin-left:8px}
+.viz-leg-item{display:flex;align-items:center;gap:5px;
+  font-family:var(--sans);font-size:.65rem;color:var(--label);letter-spacing:.08em}
+.viz-leg-swatch{width:22px;height:2px;border-radius:1px}
+.viz-leg-swatch.travel{background:rgba(255,255,255,.18);border-top:1px dashed rgba(255,255,255,.25)}
+.viz-controls{display:flex;gap:8px;margin-left:auto;align-items:center}
+.viz-ctl-label{font-family:var(--sans);font-size:.62rem;color:var(--muted);
+  letter-spacing:.1em;text-transform:uppercase;cursor:pointer;user-select:none;
+  display:flex;align-items:center;gap:5px}
+.viz-ctl-label input{accent-color:var(--accent);cursor:pointer}
+.viz-canvas-wrap{flex:1;position:relative;overflow:hidden;cursor:grab}
+.viz-canvas-wrap:active{cursor:grabbing}
+#vizCanvas{display:block;width:100%;height:100%}
+.viz-hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  font-family:var(--sans);font-size:.62rem;color:var(--muted);
+  letter-spacing:.1em;pointer-events:none;text-transform:uppercase;
+  background:rgba(12,13,16,.6);padding:4px 12px;border-radius:10px}
+.viz-close{font-family:var(--sans);font-weight:700;font-size:.8rem;letter-spacing:.12em;
+  text-transform:uppercase;background:rgba(255,107,53,.12);color:var(--accent2);
+  border:1px solid rgba(255,107,53,.25);padding:7px 16px;border-radius:3px;cursor:pointer;
+  transition:background .15s}
+.viz-close:hover{background:rgba(255,107,53,.22)}
+
+/* ── Tutti Frutti ── */
+.badge-tf{
+  display:inline-block;font-family:var(--sans);font-size:.55rem;letter-spacing:.1em;
+  text-transform:uppercase;padding:2px 7px;border-radius:2px;margin-left:8px;
+  vertical-align:middle;font-weight:700;
+  background:linear-gradient(90deg,#ff6b6b22,#ffd16622,#3dd6c822,#b06aff22);
+  border:1px solid rgba(255,209,102,.25);
+  color:#ffd166;
+}
+.tf-desc{
+  font-family:var(--sans);font-size:.68rem;color:var(--muted);
+  line-height:1.5;margin-bottom:12px;letter-spacing:.02em;
+}
+.tf-dishes-label{
+  font-family:var(--sans);font-size:.57rem;color:var(--muted);
+  letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;margin-top:2px;
+}
+.tf-dish-list{display:flex;flex-direction:column;gap:4px}
+.tf-dish-item{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--sans);font-size:.7rem;color:var(--label);
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:3px;padding:5px 8px;
+}
+.tf-dish-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tf-dish-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tf-dish-coords{font-family:var(--mono);font-size:.6rem;color:var(--muted)}
+
+@media(max-width:860px){
+  .workspace{grid-template-columns:1fr;height:auto}
+  .sidebar{border-left:none;border-top:1px solid var(--border)}
+  .grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">Painter <em>//</em> G-Code Studio</div>
+    <div class="subtitle">Multi-color robotic painting &mdash; runs entirely in browser</div>
+  </div>
+  <div class="hdr-quote">
+    "A man paints with his brains and not with his hands."
+    <em>— Michelangelo</em>
+  </div>
+  <div class="hdr-right">
+    <div class="pills" id="pills"></div>
+  </div>
+</header>
+
+<!-- ── VISUALIZER MODAL ── -->
+<div id="vizModal">
+  <div class="viz-header">
+    <div class="viz-title">&#x2B21; Path Preview</div>
+    <div class="viz-stats" id="vizStats"></div>
+    <div class="viz-legend" id="vizLegend"></div>
+    <div class="viz-controls">
+      <label class="viz-ctl-label"><input type="checkbox" id="vizShowTravel" checked> Travel moves</label>
+      <label class="viz-ctl-label"><input type="checkbox" id="vizShowWork" checked> Work area</label>
+      <label class="viz-ctl-label"><input type="checkbox" id="vizShowDips" checked> Dip points</label>
+      <button class="btn-sec" onclick="vizDownloadPNG()" style="padding:6px 14px;font-size:.75rem">&#x21E9; PNG</button>
+      <button class="viz-close" onclick="closeViz()">&#x2715; Close</button>
+    </div>
+  </div>
+  <div class="viz-canvas-wrap" id="vizWrap">
+    <canvas id="vizCanvas"></canvas>
+    <div class="viz-hint">Scroll to zoom &nbsp;·&nbsp; Drag to pan &nbsp;·&nbsp; Double-click to reset</div>
+  </div>
+</div>
+
+<div class="workspace">
+
+  <!-- ── LAYERS ── -->
+  <div class="main">
+    <div class="sec">Color Layers &mdash; Petri Dish Configuration</div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- ── GLOBAL CONFIG SIDEBAR ── -->
+  <div class="sidebar">
+
+    <div class="ss">
+      <div class="sec">Canvas</div>
+      <div class="cg">
+        <div class="f"><label>Target Width (mm)</label><input type="number" id="g_target_width" value="1070" step="1"></div>
+        <div class="f"><label>Resolution (px/mm)</label><input type="number" id="g_res" value="1.0" step="0.5" min="0.5" max="4"></div>
+        <div class="f"><label>Brush Width (mm)</label><input type="number" id="g_brush_w" value="1.6" step="0.1"></div>
+        <div class="f"><label>Overlap</label><input type="number" id="g_overlap" value="0.15" step="0.01"></div>
+        <div class="f"><label>X Offset (mm)</label><input type="number" id="g_x_off" value="263" step="1"></div>
+        <div class="f"><label>Y Offset (mm)</label><input type="number" id="g_y_off" value="266" step="1"></div>
+      </div>
+    </div>
+
+    <div class="ss">
+      <div class="sec">Z Heights (mm)</div>
+      <div class="cg">
+        <div class="f"><label>Z Paint</label><input type="number" id="g_z_paint" value="0.0" step="0.1"></div>
+        <div class="f"><label>Z Low</label><input type="number" id="g_z_low" value="4.6" step="0.1"></div>
+        <div class="f"><label>Z High</label><input type="number" id="g_z_high" value="31.0" step="0.5"></div>
+        <div class="f"><label>Z Wipe Exit</label><input type="number" id="g_z_wipe_exit" value="16.0" step="0.5"></div>
+        <div class="f"><label>Dip Z</label><input type="number" id="g_dip_z" value="0.0" step="0.1"></div>
+      </div>
+    </div>
+
+    <div class="ss">
+      <div class="sec">Dip Parameters</div>
+      <div class="cg">
+        <div class="f"><label>Min Dist (mm)</label><input type="number" id="g_min_dist" value="240" step="5"></div>
+        <div class="f"><label>Max Dist (mm)</label><input type="number" id="g_max_dist" value="280" step="5"></div>
+        <div class="f"><label>Jitter</label><input type="number" id="g_dip_jitter" value="20" step="1"></div>
+        <div class="f"><label>Spiral Loops</label><input type="number" id="g_dip_spiral_loops" value="1.0" step="0.5"></div>
+        <div class="f"><label>Spiral Radius</label><input type="number" id="g_dip_spiral_r" value="50" step="5"></div>
+        <div class="f"><label>Wipe Radius</label><input type="number" id="g_wipe_r" value="70" step="5"></div>
+      </div>
+    </div>
+
+    <div class="ss">
+      <div class="sec">Speed &amp; Acceleration</div>
+      <div class="cg">
+        <div class="f"><label>Feed Travel</label><input type="number" id="g_feed" value="12000" step="500"></div>
+        <div class="f"><label>Feed Paint</label><input type="number" id="g_feed_paint" value="400" step="50"></div>
+        <div class="f"><label>Accel Travel</label><input type="number" id="g_accel_travel" value="12000" step="500"></div>
+        <div class="f"><label>Accel Paint</label><input type="number" id="g_accel_paint" value="200" step="50"></div>
+      </div>
+    </div>
+
+    <!-- ── WORKING AREA LIMITS ── -->
+    <div class="ss">
+      <div class="sec">Working Area Limits <span class="badge">Clamp</span></div>
+      <div class="cg" style="margin-bottom:8px">
+        <div class="f"><label>Min X (mm)</label><input type="number" id="g_area_min_x" value="0" step="1"></div>
+        <div class="f"><label>Max X (mm)</label><input type="number" id="g_area_max_x" value="1400" step="10"></div>
+        <div class="f"><label>Min Y (mm)</label><input type="number" id="g_area_min_y" value="0" step="1"></div>
+        <div class="f"><label>Max Y (mm)</label><input type="number" id="g_area_max_y" value="1400" step="10"></div>
+      </div>
+      <div class="ftog">
+        <input type="checkbox" id="g_area_enabled" checked>
+        <label for="g_area_enabled">Enable coordinate clamping</label>
+      </div>
+    </div>
+
+    <!-- ── BACKLASH COMPENSATION ── -->
+    <div class="ss">
+      <div class="sec">Backlash Compensation <span class="badge warn">BL</span></div>
+      <div class="ftog" style="margin-bottom:10px">
+        <input type="checkbox" id="g_bl_enabled">
+        <label for="g_bl_enabled">Enable backlash compensation</label>
+      </div>
+      <div class="cg">
+        <div class="f"><label>BL X (mm)</label><input type="number" id="g_bl_x" value="0.5" step="0.05"></div>
+        <div class="f"><label>BL Y (mm)</label><input type="number" id="g_bl_y" value="1.6" step="0.05"></div>
+        <div class="f"><label>Threshold (mm)</label><input type="number" id="g_bl_threshold" value="0.05" step="0.01"></div>
+        <div class="f"><label>Safe Feed (mm/min)</label><input type="number" id="g_bl_safe_feed" value="200" step="10"></div>
+      </div>
+    </div>
+
+    <!-- ── TUTTI FRUTTI ── -->
+    <div class="ss" id="tfSection">
+      <div class="sec">Tutti Frutti Mode <span class="badge-tf">&#x1F3A8; SURPRISE</span></div>
+      <div class="tf-desc">Randomly switches petri dishes while painting — each dip picks a surprise color from all active layers.</div>
+      <div class="ftog" style="margin-bottom:12px">
+        <input type="checkbox" id="g_tf_enabled" onchange="onTFToggle()">
+        <label for="g_tf_enabled">Enable tutti frutti random dipping</label>
+      </div>
+      <div id="tfParams" style="opacity:.35;pointer-events:none">
+        <div class="cg" style="margin-bottom:8px">
+          <div class="f"><label>Min Stroke (mm)</label><input type="number" id="g_tf_min" value="80" step="10" min="10"></div>
+          <div class="f"><label>Max Stroke (mm)</label><input type="number" id="g_tf_max" value="200" step="10" min="10"></div>
+        </div>
+        <div class="ftog" style="margin-bottom:8px">
+          <input type="checkbox" id="g_tf_no_repeat" checked>
+          <label for="g_tf_no_repeat">Never same color twice in a row</label>
+        </div>
+        <div class="tf-dishes-label">Dishes in pool (enabled layers):</div>
+        <div class="tf-dish-list" id="tfDishList"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="genbar">
+  <button class="btn" id="btnGen" onclick="generate()">&#x2B21; Generate G-Code</button>
+  <button class="btn-sec" id="btnPreview" onclick="openViz()" disabled>&#x25A3; Preview Paths</button>
+  <div class="pw" id="pw"><div class="pb"><div class="pf" id="pf"></div></div></div>
+  <div class="st" id="st">Load images for each active layer, then generate.</div>
+</div>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════════════════════
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ══════════════════════════════════════════════════════
+//  IMAGE PROCESSING
+// ══════════════════════════════════════════════════════
+
+/** Generate thresholded preview + stats from a File */
+function processPreview(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onerror = reject;
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const sc = Math.min(400 / img.width, 400 / img.height, 1);
+      const pw = Math.round(img.width * sc), ph = Math.round(img.height * sc);
+      const cv = document.createElement('canvas');
+      cv.width = pw; cv.height = ph;
+      const ctx = cv.getContext('2d');
+      ctx.drawImage(img, 0, 0, pw, ph);
+      const id = ctx.getImageData(0, 0, pw, ph);
+      const px = id.data;
+      let inside = 0;
+      for (let i = 0; i < pw * ph; i++) {
+        const g = 0.299 * px[i*4] + 0.587 * px[i*4+1] + 0.114 * px[i*4+2];
+        const v = g < 140 ? 0 : 255;
+        px[i*4] = px[i*4+1] = px[i*4+2] = v;
+        if (!v) inside++;
+      }
+      ctx.putImageData(id, 0, 0);
+      resolve({
+        preview: cv.toDataURL('image/png'),
+        coverage: (inside / (pw * ph) * 100).toFixed(1),
+        size: [img.width, img.height]
+      });
+    };
+    img.src = url;
+  });
+}
+
+/** Load file as full-resolution binary Uint8Array for path generation */
+function loadBinaryArr(file, targetWidth, res) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onerror = reject;
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const tw = Math.round(targetWidth * res);
+      const th = Math.round(tw * img.height / img.width);
+      const cv = document.createElement('canvas');
+      cv.width = tw; cv.height = th;
+      const ctx = cv.getContext('2d');
+      ctx.drawImage(img, 0, 0, tw, th);
+      const px = ctx.getImageData(0, 0, tw, th).data;
+      const arr = new Uint8Array(th * tw);
+      for (let i = 0; i < th * tw; i++) {
+        const g = 0.299 * px[i*4] + 0.587 * px[i*4+1] + 0.114 * px[i*4+2];
+        arr[i] = g < 140 ? 1 : 0;
+      }
+      resolve({ arr, h: th, w: tw });
+    };
+    img.src = url;
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  CHEBYSHEV DISTANCE TRANSFORM  (8-connected BFS)
+// ══════════════════════════════════════════════════════
+
+function chebyshevDist(arr, h, w) {
+  const dist = new Uint16Array(h * w).fill(65535);
+  const q = new Int32Array(h * w);
+  let head = 0, tail = 0;
+  for (let i = 0; i < h * w; i++) {
+    if (!arr[i]) { dist[i] = 0; q[tail++] = i; }
+  }
+  while (head < tail) {
+    const idx = q[head++];
+    const r = (idx / w) | 0, c = idx % w;
+    const d = dist[idx] + 1;
+    for (let dr = -1; dr <= 1; dr++) {
+      const nr = r + dr; if (nr < 0 || nr >= h) continue;
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const nc = c + dc; if (nc < 0 || nc >= w) continue;
+        const ni = nr * w + nc;
+        if (dist[ni] > d) { dist[ni] = d; q[tail++] = ni; }
+      }
+    }
+  }
+  return dist;
+}
+
+// ══════════════════════════════════════════════════════
+//  MARCHING SQUARES
+// ══════════════════════════════════════════════════════
+
+function marchingSquares(data, h, w, level) {
+  const segs = [];
+
+  for (let r = 0; r < h - 1; r++) {
+    for (let c = 0; c < w - 1; c++) {
+      const tl = data[r*w + c],     tr = data[r*w + c+1];
+      const bl = data[(r+1)*w + c], br = data[(r+1)*w + c+1];
+
+      const tlI = tl > level ? 1 : 0, trI = tr > level ? 1 : 0;
+      const brI = br > level ? 1 : 0, blI = bl > level ? 1 : 0;
+      const idx = (tlI << 3) | (trI << 2) | (brI << 1) | blI;
+      if (idx === 0 || idx === 15) continue;
+
+      const iT = tl !== tr ? (level - tl) / (tr - tl) : 0.5;
+      const iR = tr !== br ? (level - tr) / (br - tr) : 0.5;
+      const iB = bl !== br ? (level - bl) / (br - bl) : 0.5;
+      const iL = tl !== bl ? (level - tl) / (bl - tl) : 0.5;
+
+      const T = [r,     c + iT];
+      const R = [r + iR, c + 1];
+      const B = [r + 1,  c + iB];
+      const L = [r + iL, c    ];
+
+      switch (idx) {
+        case  1: segs.push([L, B]); break;
+        case  2: segs.push([B, R]); break;
+        case  3: segs.push([L, R]); break;
+        case  4: segs.push([T, R]); break;
+        case  5: segs.push([T, R], [L, B]); break;
+        case  6: segs.push([T, B]); break;
+        case  7: segs.push([T, L]); break;
+        case  8: segs.push([T, L]); break;
+        case  9: segs.push([T, B]); break;
+        case 10: segs.push([T, L], [B, R]); break;
+        case 11: segs.push([T, R]); break;
+        case 12: segs.push([L, R]); break;
+        case 13: segs.push([B, R]); break;
+        case 14: segs.push([L, B]); break;
+      }
+    }
+  }
+
+  return connectSegments(segs);
+}
+
+function connectSegments(segs) {
+  if (!segs.length) return [];
+
+  const key = p => `${Math.round(p[0] * 4)},${Math.round(p[1] * 4)}`;
+
+  const adj = new Map();
+  const addAdj = (p, ref) => {
+    const k = key(p);
+    if (!adj.has(k)) adj.set(k, []);
+    adj.get(k).push(ref);
+  };
+  for (let i = 0; i < segs.length; i++) {
+    addAdj(segs[i][0], i * 2 + 0);
+    addAdj(segs[i][1], i * 2 + 1);
+  }
+
+  const used = new Uint8Array(segs.length);
+  const paths = [];
+
+  for (let si = 0; si < segs.length; si++) {
+    if (used[si]) continue;
+    used[si] = 1;
+
+    const fwd = [segs[si][0], segs[si][1]];
+    let cur = segs[si][1];
+    for (let lim = segs.length; lim-- > 0;) {
+      const nbrs = adj.get(key(cur));
+      let moved = false;
+      if (nbrs) for (const ref of nbrs) {
+        const ni = ref >> 1, ne = ref & 1;
+        if (!used[ni]) {
+          used[ni] = 1;
+          cur = segs[ni][ne ^ 1];
+          fwd.push(cur);
+          moved = true;
+          break;
+        }
+      }
+      if (!moved) break;
+    }
+
+    const bwd = [segs[si][0]];
+    cur = segs[si][0];
+    for (let lim = segs.length; lim-- > 0;) {
+      const nbrs = adj.get(key(cur));
+      let moved = false;
+      if (nbrs) for (const ref of nbrs) {
+        const ni = ref >> 1, ne = ref & 1;
+        if (!used[ni]) {
+          used[ni] = 1;
+          cur = segs[ni][ne ^ 1];
+          bwd.push(cur);
+          moved = true;
+          break;
+        }
+      }
+      if (!moved) break;
+    }
+
+    bwd.reverse();
+    const path = [...bwd, ...fwd.slice(1)];
+    if (path.length > 2) paths.push(path);
+  }
+
+  return paths;
+}
+
+// ══════════════════════════════════════════════════════
+//  PATH GENERATION  (lines + concentric + outline)
+// ══════════════════════════════════════════════════════
+
+async function generatePaths(arr, h, w, cfg, onProg) {
+  const res = cfg.res;
+  const stepPx = Math.max(1, Math.trunc(cfg.brush_w * (1 - cfg.overlap) * res));
+  const raw = [];
+
+  if (cfg.infill_type === 'concentric') {
+    const dist = chebyshevDist(arr, h, w);
+
+    if (cfg.outline_only) {
+      // ── Outline only: single contour at level 0.5 (the outermost boundary) ──
+      onProg && onProg(0.1);
+      await sleep(0);
+      for (const contour of marchingSquares(dist, h, w, 0.5)) {
+        const path = contour.map(([row, col]) => [
+          col / res + cfg.x_off,
+          (h - 1 - row) / res + cfg.y_off
+        ]);
+        if (path.length > 2) raw.push(path);
+      }
+      onProg && onProg(1.0);
+    } else {
+      // ── Full concentric fill ──
+      let maxD = 0;
+      for (let i = 0; i < dist.length; i++) {
+        if (dist[i] !== 65535 && dist[i] > maxD) maxD = dist[i];
+      }
+      let lvIdx = 0;
+      for (let lv = 0.5; lv < maxD; lv += stepPx, lvIdx++) {
+        for (const contour of marchingSquares(dist, h, w, lv)) {
+          const path = contour.map(([row, col]) => [
+            col / res + cfg.x_off,
+            (h - 1 - row) / res + cfg.y_off
+          ]);
+          if (path.length > 2) raw.push(path);
+        }
+        if (lvIdx % 8 === 0) {
+          onProg && onProg(lv / maxD);
+          await sleep(0);
+        }
+      }
+    }
+
+  } else {
+    // Lines infill
+    const ar = cfg.infill_angle * Math.PI / 180;
+    const ca = Math.cos(ar), sa = Math.sin(ar);
+    const cx = w / 2, cy = h / 2;
+    const diag = Math.ceil(Math.hypot(w, h)) + 10;
+    const total = Math.ceil(2 * diag / stepPx);
+    let li = 0;
+
+    for (let yR = -diag; yR < diag; yR += stepPx, li++) {
+      let line = [];
+      for (let xR = -diag; xR < diag; xR++) {
+        const ox = Math.trunc(cx + xR * ca - yR * sa);
+        const oy = Math.trunc(cy + xR * sa + yR * ca);
+        if (ox >= 0 && ox < w && oy >= 0 && oy < h && arr[oy * w + ox]) {
+          line.push([ox / res + cfg.x_off, (h - 1 - oy) / res + cfg.y_off]);
+        } else {
+          if (line.length > 1) raw.push(line);
+          line = [];
+        }
+      }
+      if (line.length > 1) raw.push(line);
+      if (li % 40 === 0) {
+        onProg && onProg(li / total);
+        await sleep(0);
+      }
+    }
+  }
+
+  return optimizePaths(raw, [cfg.dip_x, cfg.dip_y]);
+}
+
+// ══════════════════════════════════════════════════════
+//  PATH OPTIMIZER
+// ══════════════════════════════════════════════════════
+
+function optimizePaths(paths, start) {
+  if (!paths.length) return [];
+
+  if (paths.length > 5000) {
+    return [...paths].sort((a, b) => {
+      const ax = (a[0][0] / 20) | 0, bx = (b[0][0] / 20) | 0;
+      if (ax !== bx) return ax - bx;
+      return ax % 2 ? b[0][1] - a[0][1] : a[0][1] - b[0][1];
+    });
+  }
+
+  const rem = [...paths];
+  const opt = [];
+  let cx = start[0], cy = start[1];
+  while (rem.length) {
+    let bi = 0, bd = Infinity;
+    for (let i = 0; i < rem.length; i++) {
+      const dx = rem[i][0][0] - cx, dy = rem[i][0][1] - cy;
+      const d = dx * dx + dy * dy;
+      if (d < bd) { bd = d; bi = i; }
+    }
+    const p = rem.splice(bi, 1)[0];
+    opt.push(p);
+    cx = p[p.length - 1][0]; cy = p[p.length - 1][1];
+  }
+  return opt;
+}
+
+// ══════════════════════════════════════════════════════
+//  G-CODE GENERATOR  (with working area clamping and
+//  backlash compensation)
+// ══════════════════════════════════════════════════════
+
+class UltraPainter {
+  constructor(cfg) {
+    this.c = cfg;
+    this.gc = [];
+    this.dd = 0;
+    this.pos = [cfg.dip_x, cfg.dip_y];
+    this.md = cfg.min_dist + Math.random() * (cfg.max_dist - cfg.min_dist);
+
+    // Backlash compensation state
+    this.bl_dir_x  = 0;
+    this.bl_dir_y  = 0;
+    this.bl_off_x  = 0.0;
+    this.bl_off_y  = 0.0;
+    this.bl_log_x  = cfg.dip_x;
+    this.bl_log_y  = cfg.dip_y;
+    this.bl_feed   = cfg.feed_paint;
+
+    // Tutti Frutti state
+    // tf_dishes: [{x, y, name, color}] — set before calling run()
+    this.tf_dishes      = cfg.tf_dishes || [];
+    this.tf_current_idx = -1;   // index of currently loaded dish
+  }
+
+  // ── Clamp a coordinate to working area (always >= 0) ──
+  _clamp(x, y) {
+    const c = this.c;
+    // Always prevent negative coords (like Python's if x < 0: x = 0)
+    let cx = Math.max(0, x);
+    let cy = Math.max(0, y);
+    // Additionally apply user-defined area bounds when enabled
+    if (c.area_enabled) {
+      cx = Math.max(c.area_min_x, Math.min(c.area_max_x, cx));
+      cy = Math.max(c.area_min_y, Math.min(c.area_max_y, cy));
+    }
+    return [cx, cy];
+  }
+
+  // ── Emit move with optional backlash pre-correction ──
+  // Returns array of gcode strings to push
+  _blMove(cmd, tx, ty, extra) {
+    const c = this.c;
+    const f = n => n.toFixed(3);
+    const lines = [];
+
+    if (c.bl_enabled) {
+      const dx = tx - this.bl_log_x;
+      const dy = ty - this.bl_log_y;
+
+      // X direction reversal
+      if (Math.abs(dx) > c.bl_threshold) {
+        const nd = dx > 0 ? 1 : -1;
+        if (this.bl_dir_x !== 0 && nd !== this.bl_dir_x) {
+          this.bl_off_x += nd === 1 ? c.bl_x : -c.bl_x;
+          const [fx, fy] = this._clamp(
+            this.bl_log_x + this.bl_off_x,
+            this.bl_log_y + this.bl_off_y
+          );
+          lines.push(`; --- Backlash X fix: ${(nd===1?c.bl_x:-c.bl_x).toFixed(3)}mm ---`);
+          lines.push(`G0 X${f(fx)} Y${f(fy)} F${c.bl_safe_feed}`);
+        }
+        this.bl_dir_x = nd;
+      }
+
+      // Y direction reversal
+      if (Math.abs(dy) > c.bl_threshold) {
+        const nd = dy > 0 ? 1 : -1;
+        if (this.bl_dir_y !== 0 && nd !== this.bl_dir_y) {
+          this.bl_off_y += nd === 1 ? c.bl_y : -c.bl_y;
+          const [fx, fy] = this._clamp(
+            this.bl_log_x + this.bl_off_x,
+            this.bl_log_y + this.bl_off_y
+          );
+          lines.push(`; --- Backlash Y fix: ${(nd===1?c.bl_y:-c.bl_y).toFixed(3)}mm ---`);
+          lines.push(`G0 X${f(fx)} Y${f(fy)} F${c.bl_safe_feed}`);
+        }
+        this.bl_dir_y = nd;
+      }
+    }
+
+    // Final physical position = logical + accumulated backlash offset
+    const [fx, fy] = this._clamp(
+      tx + this.bl_off_x,
+      ty + this.bl_off_y
+    );
+
+    lines.push(`${cmd} X${f(fx)} Y${f(fy)}${extra || ''}`);
+
+    // Update logical position
+    this.bl_log_x = tx;
+    this.bl_log_y = ty;
+
+    return lines;
+  }
+
+  _spd(m) {
+    const c = this.c;
+    const ac = m === 'travel' ? c.accel_travel : c.accel_paint;
+    const f  = m === 'travel' ? c.feed         : c.feed_paint;
+    this.gc.push('M400', `M204 P${ac} T${ac}`, `G1 F${f}`);
+  }
+
+  _dip(tx, ty) {
+    const c = this.c, f = n => n.toFixed(3);
+
+    // ── Tutti Frutti: pick a random dish ──
+    let dish_x = c.dip_x, dish_y = c.dip_y, dish_name = null;
+    if (c.tf_enabled && this.tf_dishes.length > 0) {
+      let pool = this.tf_dishes;
+      // Optionally exclude the currently loaded dish to force a color change
+      if (c.tf_no_repeat && pool.length > 1) {
+        pool = pool.filter((_, i) => i !== this.tf_current_idx);
+      }
+      const pick = Math.floor(Math.random() * pool.length);
+      const dish = pool[pick];
+      // Find real index in full tf_dishes array (for no-repeat tracking)
+      this.tf_current_idx = this.tf_dishes.indexOf(dish);
+      dish_x = dish.x; dish_y = dish.y; dish_name = dish.name;
+    }
+
+    // Clamp jittered dip approach
+    const [ax, ay] = this._clamp(
+      dish_x + (Math.random() * 2 - 1) * c.dip_jitter,
+      dish_y + (Math.random() * 2 - 1) * c.dip_jitter
+    );
+
+    const dipLabel = dish_name
+      ? `; --- DIP → ${dish_name} ---`
+      : '; --- CIKEL NAMAKANJA ---';
+    this.gc.push(`\n${dipLabel}`, `G0 Z${f(c.z_low)} F3000`);
+    this._spd('travel');
+    this.gc.push(`G0 X${f(ax)} Y${f(ay)} Z${f(c.z_high)}`, `G1 Z${f(c.dip_z)} F3000`);
+
+    // Clamp every spiral point individually
+    const ns = Math.floor(c.dip_spiral_loops * 4);
+    for (let i = 0; i < ns; i++) {
+      const a = i * Math.PI / 2, r = (i / ns) * c.dip_spiral_r;
+      const [sx, sy] = this._clamp(ax + r * Math.cos(a), ay + r * Math.sin(a));
+      this.gc.push(`G1 X${f(sx)} Y${f(sy)} F2500`);
+    }
+
+    // Clamp wipe exit — direction from dish toward paint target
+    const ddx = tx - dish_x, ddy = ty - dish_y, dd = Math.hypot(ddx, ddy);
+    const rawWx = dd > 0 ? dish_x + ddx / dd * c.wipe_r : dish_x + c.wipe_r;
+    const rawWy = dd > 0 ? dish_y + ddy / dd * c.wipe_r : dish_y;
+    const [wx, wy] = this._clamp(rawWx, rawWy);
+
+    // Clamp final target
+    const [ftx, fty] = this._clamp(tx, ty);
+
+    this.gc.push(
+      `G0 Z${f(c.z_wipe_exit)} F3000`, `G0 X${f(wx)} Y${f(wy)}`,
+      `G0 Z${f(c.z_high)} F3000`, `G0 X${f(ftx)} Y${f(fty)} Z${f(c.z_low)}`
+    );
+    this.dd = 0;
+    // TF uses its own min/max stroke length; normal mode uses global dip distance
+    const mn = c.tf_enabled ? c.tf_min : c.min_dist;
+    const mx = c.tf_enabled ? c.tf_max : c.max_dist;
+    this.md = mn + Math.random() * (mx - mn);
+    this.pos = [ftx, fty];
+  }
+
+  run(paths, appendTo) {
+    this.gc = appendTo || ['G90', 'G21'];
+    if (!paths.length) return this.gc;
+    const c = this.c, f = n => n.toFixed(3);
+
+    this._dip(paths[0][0][0], paths[0][0][1]);
+
+    for (let path of paths) {
+      const d0 = Math.hypot(path[0][0] - this.pos[0], path[0][1] - this.pos[1]);
+      const d1 = Math.hypot(path[path.length-1][0] - this.pos[0], path[path.length-1][1] - this.pos[1]);
+      if (d1 < d0) path = [...path].reverse();
+
+      this._spd('travel');
+      // Travel to path start
+      this.gc.push(...this._blMove('G0', path[0][0], path[0][1], ` Z${f(c.z_low)}`));
+      this._spd('paint');
+      this.gc.push(`G1 Z${f(c.z_paint)} F2500`);
+      this.pos = path[0];
+
+      for (let i = 1; i < path.length; i++) {
+        const [px, py] = path[i];
+        const dist = Math.hypot(px - this.pos[0], py - this.pos[1]);
+        if (this.dd + dist > this.md) {
+          this.gc.push(`G0 Z${f(c.z_low)} F3000`);
+          this._dip(px, py);
+          this._spd('paint');
+          this.gc.push(`G1 Z${f(c.z_paint)} F2500`);
+        }
+        // Paint move with backlash compensation
+        this.gc.push(...this._blMove('G1', px, py, ''));
+        this.dd += dist;
+        this.pos = [px, py];
+      }
+      this.gc.push(`G0 Z${f(c.z_low)} F3000`);
+    }
+    return this.gc;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  UI STATE
+// ══════════════════════════════════════════════════════
+
+const COLORS = ['#ff6b6b','#3dd6c8','#ffd166','#b06aff'];
+const NAMES  = ['Color 1 — Red','Color 2 — Teal','Color 3 — Yellow','Color 4 — Purple'];
+const DIPS   = [{x:66,y:862},{x:66,y:700},{x:66,y:538},{x:66,y:376}];
+
+const state = Array.from({length:4}, (_, i) => ({
+  name: NAMES[i], enabled: true,
+  dip_x: DIPS[i].x, dip_y: DIPS[i].y,
+  infill_type: 'lines', infill_angle: i * 45,
+  outline_only: false,
+  brush_w: null,
+  file: null, preview: null, stats: ''
+}));
+
+// ── RENDER ──
+function render() {
+  document.getElementById('grid').innerHTML = state.map((s, i) => `
+    <div class="card lc${i+1} ${s.enabled?'live':'off'}" id="card${i}">
+      <div class="card-head">
+        <div class="dot" style="background:${COLORS[i]};box-shadow:0 0 7px ${COLORS[i]}80"></div>
+        <input class="nm" value="${s.name}" oninput="state[${i}].name=this.value" style="color:${COLORS[i]}">
+        <input type="checkbox" class="tog" ${s.enabled?'checked':''}
+          onchange="toggleLayer(${i},this.checked)">
+      </div>
+      <div class="cb">
+        <!-- Drop zone -->
+        <div class="dz ${s.preview?'loaded':''}" id="dz${i}"
+          onclick="document.getElementById('fi${i}').click()"
+          ondragover="event.preventDefault()" ondrop="dropFile(event,${i})">
+          ${s.preview ? `<img src="${s.preview}">` : ''}
+          <div class="dzov">
+            <div class="dzi">&#x2B21;</div>
+            <div class="dzt">${s.preview ? 'Replace image' : 'Drop or click to load'}</div>
+          </div>
+        </div>
+        <input type="file" id="fi${i}" style="display:none" accept="image/*"
+          onchange="onFile(event,${i})">
+        <div class="st2" id="st2_${i}">${s.stats || 'No image loaded'}</div>
+
+        <!-- Petri dish position -->
+        <div class="fr">
+          <div class="f"><label>Petri Dish X (mm)</label>
+            <input type="number" value="${s.dip_x}" step="1"
+              oninput="state[${i}].dip_x=+this.value||0"></div>
+          <div class="f"><label>Petri Dish Y (mm)</label>
+            <input type="number" value="${s.dip_y}" step="1"
+              oninput="state[${i}].dip_y=+this.value||0"></div>
+        </div>
+
+        <!-- Infill -->
+        <div class="fr t3">
+          <div class="f" style="grid-column:span 2"><label>Infill Type</label>
+            <select id="sel_infill_${i}" onchange="onInfillChange(${i},this.value)">
+              <option value="lines"      ${s.infill_type==='lines'?'selected':''}>Lines</option>
+              <option value="concentric" ${s.infill_type==='concentric'?'selected':''}>Concentric</option>
+            </select></div>
+          <div class="f"><label>Angle °</label>
+            <input type="number" value="${s.infill_angle}" step="5"
+              oninput="state[${i}].infill_angle=+this.value||0"></div>
+        </div>
+
+        <!-- Outline Only (concentric) -->
+        <div class="ftog" id="outlinerow_${i}" style="${s.infill_type==='concentric'?'':'opacity:.35;pointer-events:none'}">
+          <input type="checkbox" id="outline_${i}" ${s.outline_only?'checked':''}
+            onchange="state[${i}].outline_only=this.checked">
+          <label for="outline_${i}">Outline only (single contour)</label>
+        </div>
+
+        <!-- Per-layer brush width -->
+        <div class="fr" style="margin-top:7px">
+          <div class="f"><label>Brush Width (mm)</label>
+            <input type="number" placeholder="(global)" step="0.1"
+              value="${s.brush_w !== null ? s.brush_w : ''}"
+              oninput="state[${i}].brush_w=this.value===''?null:+this.value"></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  updatePills();
+}
+
+function onInfillChange(i, val) {
+  state[i].infill_type = val;
+  const row = document.getElementById(`outlinerow_${i}`);
+  if (val === 'concentric') {
+    row.style.opacity = '1'; row.style.pointerEvents = 'auto';
+  } else {
+    row.style.opacity = '.35'; row.style.pointerEvents = 'none';
+    state[i].outline_only = false;
+    document.getElementById(`outline_${i}`).checked = false;
+  }
+}
+
+function updatePills() {
+  document.getElementById('pills').innerHTML = state.map((s, i) =>
+    `<div class="pill ${s.enabled?'on':''}"
+      style="background:${COLORS[i]};${s.enabled ? `box-shadow:0 0 6px ${COLORS[i]}` : ''}"
+      title="${s.name}"></div>`
+  ).join('');
+  updateTFDishList();
+}
+
+// ── TUTTI FRUTTI UI ──
+function onTFToggle() {
+  const on = document.getElementById('g_tf_enabled').checked;
+  const params = document.getElementById('tfParams');
+  params.style.opacity = on ? '1' : '.35';
+  params.style.pointerEvents = on ? 'auto' : 'none';
+  updateTFDishList();
+}
+
+function updateTFDishList() {
+  const el = document.getElementById('tfDishList');
+  if (!el) return;
+  const active = state.filter(s => s.enabled);
+  if (!active.length) {
+    el.innerHTML = `<div style="font-family:var(--sans);font-size:.65rem;color:var(--muted);padding:4px 0">No active layers</div>`;
+    return;
+  }
+  el.innerHTML = active.map(s => {
+    const i = state.indexOf(s);
+    return `<div class="tf-dish-item">
+      <div class="tf-dish-dot" style="background:${COLORS[i]};box-shadow:0 0 5px ${COLORS[i]}80"></div>
+      <div class="tf-dish-name">${s.name}</div>
+      <div class="tf-dish-coords">${s.dip_x}, ${s.dip_y}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleLayer(i, v) {
+  state[i].enabled = v;
+  document.getElementById(`card${i}`).className = `card lc${i+1} ${v?'live':'off'}`;
+  updatePills();
+}
+
+// ── FILE HANDLING ──
+function onFile(e, i) { const f = e.target.files[0]; if (f) handleFile(f, i); }
+function dropFile(e, i) { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f, i); }
+
+async function handleFile(file, i) {
+  setst(`Processing layer ${i+1} image…`, '');
+  try {
+    const { preview, coverage, size } = await processPreview(file);
+    state[i].file    = file;
+    state[i].preview = preview;
+    state[i].stats   = `${size[0]}×${size[1]}px · ${coverage}% coverage`;
+    render();
+    setst(`Layer ${i+1} ready — ${state[i].stats}`, 'ok');
+  } catch (err) {
+    setst(`Layer ${i+1} image error: ${err}`, 'err');
+  }
+}
+
+// ── GLOBAL CONFIG READ ──
+function gcfg() {
+  const g  = id => parseFloat(document.getElementById('g_' + id).value) || 0;
+  const gi = id => parseInt(document.getElementById('g_' + id).value)   || 0;
+  const gb = id => document.getElementById('g_' + id).checked;
+  return {
+    target_width: g('target_width'), brush_w: g('brush_w'), overlap: g('overlap'),
+    res: g('res') || 1.0,
+    x_off: g('x_off'), y_off: g('y_off'),
+    z_paint: g('z_paint'), z_low: g('z_low'), z_high: g('z_high'),
+    z_wipe_exit: g('z_wipe_exit'), dip_z: g('dip_z'),
+    min_dist: g('min_dist'), max_dist: g('max_dist'),
+    dip_jitter: g('dip_jitter'), dip_spiral_loops: g('dip_spiral_loops'),
+    dip_spiral_r: g('dip_spiral_r'), wipe_r: g('wipe_r'),
+    feed: g('feed'), feed_paint: g('feed_paint'),
+    accel_travel: g('accel_travel'), accel_paint: g('accel_paint'),
+    // Working area
+    area_enabled: gb('area_enabled'),
+    area_min_x: g('area_min_x'), area_max_x: g('area_max_x'),
+    area_min_y: g('area_min_y'), area_max_y: g('area_max_y'),
+    // Backlash
+    bl_enabled:   gb('bl_enabled'),
+    bl_x:         g('bl_x'),
+    bl_y:         g('bl_y'),
+    bl_threshold: g('bl_threshold') || 0.05,
+    bl_safe_feed: gi('bl_safe_feed') || 200,
+    // Tutti Frutti
+    tf_enabled:   gb('tf_enabled'),
+    tf_min:       g('tf_min') || 80,
+    tf_max:       g('tf_max') || 200,
+    tf_no_repeat: gb('tf_no_repeat'),
+  };
+}
+
+// ── STATUS / PROGRESS ──
+function setst(m, t) {
+  const el = document.getElementById('st');
+  el.textContent = m; el.className = 'st' + (t ? ' ' + t : '');
+}
+function setProg(v) {
+  document.getElementById('pf').style.width = Math.min(v * 100, 100) + '%';
+}
+
+// ══════════════════════════════════════════════════════
+//  PATH DATA STORE  (for visualizer)
+// ══════════════════════════════════════════════════════
+let lastGenData = [];   // [{layerIdx, color, name, paths, cfg}]
+let lastGenCfg  = null;
+
+// ── MAIN GENERATE ──
+async function generate() {
+  const activeLayers = state.filter(s => s.enabled && s.file);
+  if (!activeLayers.length) {
+    setst('No active layers with images loaded.', 'err');
+    return;
+  }
+
+  const btn = document.getElementById('btnGen');
+  const pw  = document.getElementById('pw');
+  btn.disabled = true;
+  document.getElementById('btnPreview').disabled = true;
+  pw.classList.add('vis'); setProg(0);
+
+  const global = gcfg();
+  lastGenData = [];
+  lastGenCfg  = global;
+
+  // Build Tutti Frutti dish pool from all enabled layers
+  const tf_dishes = state
+    .filter(s => s.enabled)
+    .map((s, _i, _arr) => ({ x: s.dip_x, y: s.dip_y, name: s.name, color: COLORS[state.indexOf(s)] }));
+
+  const combined = [
+    'G90', 'G21',
+    '; === MULTI-COLOR PAINTER GCODE ===',
+    `; Generated layers: ${activeLayers.length}`,
+    `; Backlash compensation: ${global.bl_enabled ? `ON  BX=${global.bl_x} BY=${global.bl_y}` : 'OFF'}`,
+    `; Working area clamping: ${global.area_enabled ? `ON  X[${global.area_min_x}–${global.area_max_x}] Y[${global.area_min_y}–${global.area_max_y}]` : 'OFF'}`,
+    `; Tutti Frutti mode: ${global.tf_enabled ? `ON  stroke ${global.tf_min}–${global.tf_max}mm  dishes: ${tf_dishes.map(d=>d.name).join(', ')}` : 'OFF'}`,
+    ''
+  ];
+
+  try {
+    let done = 0;
+    for (let i = 0; i < state.length; i++) {
+      const s = state[i];
+      if (!s.enabled || !s.file) continue;
+
+      combined.push(
+        `\n; ═══════════════════════════════`,
+        `; LAYER ${i+1}: ${s.name}`,
+        `; Infill: ${s.infill_type}${s.infill_type==='concentric' && s.outline_only ? ' (outline only)' : ''}`,
+        `; ═══════════════════════════════\n`
+      );
+
+      const cfg = {
+        ...global,
+        dip_x: s.dip_x, dip_y: s.dip_y,
+        infill_type: s.infill_type, infill_angle: s.infill_angle,
+        outline_only: s.outline_only,
+        brush_w: s.brush_w !== null ? s.brush_w : global.brush_w,
+        tf_dishes   // pass full dish pool to painter
+      };
+
+      setst(`Layer ${i+1} / ${activeLayers.length}: loading image…`, '');
+      await sleep(10);
+      const { arr, h, w } = await loadBinaryArr(s.file, cfg.target_width, cfg.res);
+
+      setst(`Layer ${i+1} / ${activeLayers.length}: generating paths (${w}×${h}px)…`, '');
+      const base = done / activeLayers.length;
+      const paths = await generatePaths(arr, h, w, cfg, v => {
+        setProg(base + v / activeLayers.length * 0.9);
+      });
+
+      // Store for visualizer
+      lastGenData.push({ layerIdx: i, color: COLORS[i], name: s.name, paths, cfg });
+
+      setst(`Layer ${i+1} / ${activeLayers.length}: writing G-code (${paths.length} paths)…`, '');
+      await sleep(0);
+      const painter = new UltraPainter(cfg);
+      painter.run(paths, combined);
+
+      done++;
+      setProg(done / activeLayers.length);
+    }
+
+    combined.push('', 'M400', `G0 Z${global.z_high.toFixed(3)} F3000`, 'M2');
+
+    // Download
+    const blob = new Blob([combined.join('\n')], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'multicolor_paint.gcode';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+
+    setst(`✓ G-code for ${activeLayers.length} layer(s) downloaded. — Preview paths ▶`, 'ok');
+    document.getElementById('btnPreview').disabled = false;
+
+  } catch (err) {
+    setst('Generation failed: ' + err.message, 'err');
+    console.error(err);
+  }
+
+  btn.disabled = false;
+  pw.classList.remove('vis');
+}
+
+// ══════════════════════════════════════════════════════
+//  VISUALIZER
+// ══════════════════════════════════════════════════════
+
+// Viewport state
+let viz = {
+  scale: 1, ox: 0, oy: 0,   // pan offset in canvas px
+  dragging: false, lastX: 0, lastY: 0,
+  // Computed from data
+  dataMinX: 0, dataMinY: 0, dataMaxX: 1000, dataMaxY: 1000,
+  fitScale: 1, fitOx: 0, fitOy: 0
+};
+
+function openViz() {
+  if (!lastGenData.length) return;
+
+  const modal = document.getElementById('vizModal');
+  modal.classList.add('open');
+
+  // Build legend
+  const leg = document.getElementById('vizLegend');
+  leg.innerHTML = lastGenData.map(ld =>
+    `<div class="viz-leg-item">
+      <div class="viz-leg-swatch" style="background:${ld.color};height:2px"></div>
+      ${ld.name}
+    </div>`
+  ).join('') +
+  `<div class="viz-leg-item">
+    <div class="viz-leg-swatch travel"></div>
+    Travel
+  </div>`;
+
+  // Stats
+  let totalPaths = 0, totalPts = 0;
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for (const ld of lastGenData) {
+    totalPaths += ld.paths.length;
+    for (const path of ld.paths) {
+      totalPts += path.length;
+      for (const [x, y] of path) {
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
+      }
+    }
+    // include dip points
+    if (ld.cfg.dip_x < minX) minX = ld.cfg.dip_x;
+    if (ld.cfg.dip_x > maxX) maxX = ld.cfg.dip_x;
+    if (ld.cfg.dip_y < minY) minY = ld.cfg.dip_y;
+    if (ld.cfg.dip_y > maxY) maxY = ld.cfg.dip_y;
+  }
+
+  viz.dataMinX = minX - 20; viz.dataMinY = minY - 20;
+  viz.dataMaxX = maxX + 20; viz.dataMaxY = maxY + 20;
+
+  document.getElementById('vizStats').textContent =
+    `${totalPaths} paths · ${totalPts.toLocaleString()} points · ${(maxX - minX).toFixed(0)}×${(maxY - minY).toFixed(0)} mm`;
+
+  requestAnimationFrame(() => {
+    vizResize();
+    vizFit();
+    vizDraw();
+    bindVizEvents();
+  });
+}
+
+function closeViz() {
+  document.getElementById('vizModal').classList.remove('open');
+}
+
+function vizResize() {
+  const wrap = document.getElementById('vizWrap');
+  const cv = document.getElementById('vizCanvas');
+  cv.width  = wrap.clientWidth;
+  cv.height = wrap.clientHeight;
+}
+
+function vizFit() {
+  const cv = document.getElementById('vizCanvas');
+  const W = cv.width, H = cv.height;
+  const dataW = viz.dataMaxX - viz.dataMinX;
+  const dataH = viz.dataMaxY - viz.dataMinY;
+  const pad = 40;
+  const s = Math.min((W - pad * 2) / dataW, (H - pad * 2) / dataH);
+  viz.fitScale = s;
+  viz.fitOx = (W - dataW * s) / 2 - viz.dataMinX * s;
+  viz.fitOy = (H - dataH * s) / 2 - viz.dataMinY * s;
+  viz.scale = s; viz.ox = viz.fitOx; viz.oy = viz.fitOy;
+}
+
+// World → canvas
+function w2c(x, y) {
+  return [x * viz.scale + viz.ox, y * viz.scale + viz.oy];
+}
+
+function vizDraw() {
+  const cv = document.getElementById('vizCanvas');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const showTravel = document.getElementById('vizShowTravel').checked;
+  const showWork   = document.getElementById('vizShowWork').checked;
+  const showDips   = document.getElementById('vizShowDips').checked;
+
+  // Background
+  ctx.fillStyle = '#0c0d10';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines (major every 100mm)
+  ctx.strokeStyle = 'rgba(37,41,51,0.7)';
+  ctx.lineWidth = 0.5;
+  const gridStep = 100;
+  const gx0 = Math.floor(viz.dataMinX / gridStep) * gridStep;
+  const gy0 = Math.floor(viz.dataMinY / gridStep) * gridStep;
+  ctx.beginPath();
+  for (let gx = gx0; gx <= viz.dataMaxX + gridStep; gx += gridStep) {
+    const [cx] = w2c(gx, 0);
+    ctx.moveTo(cx, 0); ctx.lineTo(cx, H);
+    // Label
+    ctx.fillStyle = 'rgba(78,84,104,0.6)';
+    ctx.font = `${Math.max(9, 10 * viz.scale / viz.fitScale)}px monospace`;
+    ctx.fillText(gx, cx + 2, H - 6);
+  }
+  for (let gy = gy0; gy <= viz.dataMaxY + gridStep; gy += gridStep) {
+    const [, cy] = w2c(0, gy);
+    ctx.moveTo(0, cy); ctx.lineTo(W, cy);
+    ctx.fillStyle = 'rgba(78,84,104,0.6)';
+    ctx.fillText(gy, 4, cy - 3);
+  }
+  ctx.stroke();
+
+  // Working area boundary
+  if (showWork && lastGenCfg && lastGenCfg.area_enabled) {
+    const c = lastGenCfg;
+    const [x1, y1] = w2c(c.area_min_x, c.area_min_y);
+    const [x2, y2] = w2c(c.area_max_x, c.area_max_y);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(232,255,71,0.22)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    ctx.fillStyle = 'rgba(232,255,71,0.06)';
+    ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+    ctx.restore();
+  }
+
+  // Zero axes
+  const [zx, zy] = w2c(0, 0);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,107,53,0.35)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath(); ctx.moveTo(zx, 0); ctx.lineTo(zx, H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, zy); ctx.lineTo(W, zy); ctx.stroke();
+  ctx.restore();
+
+  // Paint paths per layer
+  for (const ld of lastGenData) {
+    const paintColor = ld.color;
+
+    for (let pi = 0; pi < ld.paths.length; pi++) {
+      const path = ld.paths[pi];
+      if (!path.length) continue;
+
+      // Travel line from last path end to this path start
+      if (showTravel && pi > 0) {
+        const prev = ld.paths[pi - 1];
+        const [px, py] = w2c(prev[prev.length - 1][0], prev[prev.length - 1][1]);
+        const [nx, ny] = w2c(path[0][0], path[0][1]);
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+        ctx.lineWidth = 0.5;
+        ctx.setLineDash([3, 5]);
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(nx, ny); ctx.stroke();
+        ctx.restore();
+      }
+
+      // Paint stroke
+      ctx.save();
+      ctx.strokeStyle = paintColor;
+      ctx.lineWidth = Math.max(0.5, viz.scale * 0.5);
+      ctx.globalAlpha = 0.78;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      const [sx, sy] = w2c(path[0][0], path[0][1]);
+      ctx.moveTo(sx, sy);
+      for (let i = 1; i < path.length; i++) {
+        const [cx2, cy2] = w2c(path[i][0], path[i][1]);
+        ctx.lineTo(cx2, cy2);
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      // Path start dot
+      const [dx, dy] = w2c(path[0][0], path[0][1]);
+      ctx.save();
+      ctx.fillStyle = paintColor;
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.arc(dx, dy, Math.max(1.5, viz.scale * 0.8), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Dip point marker
+    if (showDips) {
+      const [dpx, dpy] = w2c(ld.cfg.dip_x, ld.cfg.dip_y);
+      ctx.save();
+      // Outer ring
+      ctx.strokeStyle = ld.color;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.arc(dpx, dpy, 9, 0, Math.PI * 2);
+      ctx.stroke();
+      // Inner dot
+      ctx.fillStyle = ld.color;
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.arc(dpx, dpy, 3, 0, Math.PI * 2);
+      ctx.fill();
+      // Label
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = ld.color;
+      ctx.font = `bold ${Math.max(9, 11)}px 'Barlow Condensed', sans-serif`;
+      ctx.fillText('DIP', dpx + 11, dpy + 4);
+      ctx.restore();
+    }
+  }
+
+  // Scale bar
+  const barMm = niceBarMm();
+  const barPx = barMm * viz.scale;
+  const bx = W - 20 - barPx, by = H - 18;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(196,201,218,0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(bx, by); ctx.lineTo(bx + barPx, by);
+  ctx.moveTo(bx, by - 4); ctx.lineTo(bx, by + 4);
+  ctx.moveTo(bx + barPx, by - 4); ctx.lineTo(bx + barPx, by + 4);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(196,201,218,0.6)';
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${barMm} mm`, bx + barPx / 2, by - 7);
+  ctx.restore();
+}
+
+function niceBarMm() {
+  const cv = document.getElementById('vizCanvas');
+  const targetPx = cv.width * 0.15;
+  const raw = targetPx / viz.scale;
+  const pow10 = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const mult of [1, 2, 5, 10]) {
+    if (pow10 * mult * viz.scale >= targetPx * 0.5) return pow10 * mult;
+  }
+  return pow10 * 10;
+}
+
+let _vizEventsBound = false;
+function bindVizEvents() {
+  if (_vizEventsBound) return;
+  _vizEventsBound = true;
+
+  const wrap = document.getElementById('vizWrap');
+  const cv   = document.getElementById('vizCanvas');
+
+  wrap.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = cv.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    viz.ox = mx + (viz.ox - mx) * factor;
+    viz.oy = my + (viz.oy - my) * factor;
+    viz.scale *= factor;
+    vizDraw();
+  }, { passive: false });
+
+  wrap.addEventListener('mousedown', e => {
+    viz.dragging = true; viz.lastX = e.clientX; viz.lastY = e.clientY;
+  });
+  window.addEventListener('mousemove', e => {
+    if (!viz.dragging) return;
+    viz.ox += e.clientX - viz.lastX;
+    viz.oy += e.clientY - viz.lastY;
+    viz.lastX = e.clientX; viz.lastY = e.clientY;
+    vizDraw();
+  });
+  window.addEventListener('mouseup', () => { viz.dragging = false; });
+
+  wrap.addEventListener('dblclick', () => { vizFit(); vizDraw(); });
+
+  // Touch support
+  let lastTouchDist = null;
+  wrap.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      viz.dragging = true;
+      viz.lastX = e.touches[0].clientX;
+      viz.lastY = e.touches[0].clientY;
+    } else if (e.touches.length === 2) {
+      lastTouchDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+    }
+  }, { passive: true });
+  wrap.addEventListener('touchmove', e => {
+    if (e.touches.length === 1 && viz.dragging) {
+      viz.ox += e.touches[0].clientX - viz.lastX;
+      viz.oy += e.touches[0].clientY - viz.lastY;
+      viz.lastX = e.touches[0].clientX;
+      viz.lastY = e.touches[0].clientY;
+      vizDraw();
+    } else if (e.touches.length === 2 && lastTouchDist) {
+      const d = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const f = d / lastTouchDist;
+      const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const rect = cv.getBoundingClientRect();
+      const px = mx - rect.left, py = my - rect.top;
+      viz.ox = px + (viz.ox - px) * f;
+      viz.oy = py + (viz.oy - py) * f;
+      viz.scale *= f;
+      lastTouchDist = d;
+      vizDraw();
+    }
+  }, { passive: true });
+  wrap.addEventListener('touchend', () => { viz.dragging = false; lastTouchDist = null; });
+
+  // Toggle checkboxes redraw
+  ['vizShowTravel','vizShowWork','vizShowDips'].forEach(id => {
+    document.getElementById(id).addEventListener('change', vizDraw);
+  });
+
+  window.addEventListener('resize', () => {
+    if (document.getElementById('vizModal').classList.contains('open')) {
+      vizResize(); vizDraw();
+    }
+  });
+}
+
+function vizDownloadPNG() {
+  const cv = document.getElementById('vizCanvas');
+  const a = document.createElement('a');
+  a.href = cv.toDataURL('image/png');
+  a.download = 'gcode_preview.png';
+  a.click();
+}
+
+// ── INIT ──
+render();
+</script>
+</body>
+</html>
